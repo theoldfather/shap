@@ -399,7 +399,8 @@ def gather(explainer, op, *grads):
     #axis = op.inputs[2]
     var = explainer._variable_inputs(op)
     if var[1] and not var[0]:
-        assert len(indices.shape) == 2, "Only scalar indices supported right now in GatherV2!"
+        assert len(indices.shape) == 2 or \
+               (len(indices.shape)==3 and indices.shape[2]==1), "Only scalar indices supported right now in GatherV2!"
 
         xin1,rin1 = tf.split(tf.to_float(op.inputs[1]), 2)
         xout,rout = tf.split(op.outputs[0], 2)
@@ -491,11 +492,11 @@ def nonlinearity_2d_handler(input_ind0, input_ind1, op_func, explainer, op, *gra
     out1 = grads[0] * tf.tile(out1 / delta_in1, dup0)
 
     # see if due to broadcasting our gradient shapes don't match our input shapes
-    if (np.any(np.array(out1.shape) != np.array(delta_in1.shape))):
-        broadcast_index = np.where(np.array(out1.shape) != np.array(delta_in1.shape))[0][0]
+    if (np.any(np.array(out1.shape.as_list()) != np.array(delta_in1.shape.as_list()))):
+        broadcast_index = np.where(np.array(out1.shape.as_list()) != np.array(delta_in1.shape.as_list()))[0][0]
         out1 = tf.reduce_sum(out1, axis=broadcast_index, keepdims=True)
-    elif (np.any(np.array(out0.shape) != np.array(delta_in0.shape))):
-        broadcast_index = np.where(np.array(out0.shape) != np.array(delta_in0.shape))[0][0]
+    elif (np.any(np.array(out0.shape.as_list()) != np.array(delta_in0.shape.as_list()))):
+        broadcast_index = np.where(np.array(out0.shape.as_list()) != np.array(delta_in0.shape.as_list()))[0][0]
         out0 = tf.reduce_sum(out0, axis=broadcast_index, keepdims=True)
 
     # Avoid divide by zero nans
